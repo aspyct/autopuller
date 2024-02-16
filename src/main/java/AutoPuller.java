@@ -55,7 +55,7 @@ public class AutoPuller {
             }
 
             try (var reader = gitPull.errorReader()) {
-                reader.lines().forEach(LOG::info);
+                reader.lines().forEach(LOG::warn);
             }
             try (var reader = gitPull.inputReader()) {
                 reader.lines().forEach(LOG::info);
