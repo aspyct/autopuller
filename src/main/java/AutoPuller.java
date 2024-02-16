@@ -38,29 +38,34 @@ public class AutoPuller {
                 .start(7070);
     }
 
-    private static boolean gitPull(File rootDirectory, String component) throws IOException {
+    private static boolean gitPull(File rootDirectory, String component) {
         var componentDirectory = new File(rootDirectory, component);
-        var gitPull = Runtime.getRuntime().exec(new String[] {
-            "/usr/bin/git",
-            "pull"
-        }, new String[] {}, componentDirectory);
-
-        int status = 0;
+        Process gitPull = null;
         try {
-            status = gitPull.waitFor();
-        } catch (InterruptedException e) {
-            status = -1;
-        }
-        LOG.info("Git pull status: {}", status);
+            gitPull = Runtime.getRuntime().exec(new String[] {
+                "/usr/bin/git",
+                "pull"
+            }, new String[] {}, componentDirectory);
 
-        try (var reader = gitPull.errorReader()) {
-            reader.lines().forEach(LOG::info);
-        }
-        try (var reader = gitPull.inputReader()) {
-            reader.lines().forEach(LOG::info);
-        }
+            int status = -1;
+            try {
+                status = gitPull.waitFor();
+            } catch (InterruptedException e) {
+                LOG.error("Cannot wait for git pull process", e);
+            }
 
-        return status == 0;
+            try (var reader = gitPull.errorReader()) {
+                reader.lines().forEach(LOG::info);
+            }
+            try (var reader = gitPull.inputReader()) {
+                reader.lines().forEach(LOG::info);
+            }
+
+            return status == 0;
+        } catch (IOException e) {
+            LOG.error("Cannot start git pull process", e);
+            return false;
+        }
     }
 
     private static Set<String> listSubdirectories(@NotNull File parent) {
